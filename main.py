@@ -39,10 +39,10 @@ def navigate(key, cur_pos, len_items):
         curses.KEY_DOWN: cur_pos + 1 < len_items and (cur_pos + 1)
     }.get(key, cur_pos)
 
-def print_menu(win, index, item, mode):
-    win.addstr(index+1, item.get('depth')+1, "{}{} {}".format(" "*item.get('depth'),
-                                                              item.get('key', ''),
-                                                              item.get('value', '')), mode)
+def print_item(win, index, item, mode):
+    win.addstr(index+1, item.get('depth')+1, "{}{}={}".format(" "*item.get('depth'),
+                                                             item.get('key', ''),
+                                                             item.get('value', '')), mode)
 
 def print_selected(win, selected):
     None
@@ -65,7 +65,7 @@ def display(pan, items):
 
         for index, item in enumerate(depths):
             mode = curses.A_REVERSE if index == position else curses.A_NORMAL
-            print_menu(win, index, item, mode)
+            print_item(win, index, item, mode)
 
         key = win.getch()
 
