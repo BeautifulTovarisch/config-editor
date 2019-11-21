@@ -3,26 +3,23 @@ import curses
 from json import load
 from curses import panel
 
-from collections import OrderedDict
-
 def load_json():
-    return load(open('./test.json'), object_pairs_hook=OrderedDict)
+    return load(open('./test.json'))
 
-def calc_depth(tree, depth=0):
-    result = OrderedDict()
-    if hasattr(tree, '__iter__'):
-        for node in tree:
-            result.update({node: { 'depth': depth }})
-            if isinstance(tree[node], dict):
-                result.update(calc_depth(tree[node], depth+1))
-            elif isinstance(tree[node], list):
-                for item in tree[node]:
-                    result.update(calc_depth(item, depth+1))
-            else:
-                result.update({node: { 'depth': depth, 'value': tree[node] }})
-    else:
-        result.update({tree: { 'depth': depth }})
-    return result
+def to_depths(tree, depth=0):
+    results = []
+    for node in tree:
+        if not hasattr(tree[node], '__iter__'):
+            results += [{ 'key': node, 'value': tree[node], 'depth': depth }]
+        else:
+            results += [{ 'key': node, 'depth': depth }]
+        if isinstance(tree[node], dict):
+            results += to_depths(tree[node], depth+1)
+        elif isinstance(tree[node], list):
+            for item in tree[node]:
+                results += to_depths(item, depth+1)
+
+    return results
 
 def menu(screen):
     sub_win = screen.subwin(0,0)
@@ -43,8 +40,9 @@ def navigate(key, cur_pos, len_items):
     }.get(key, cur_pos)
 
 def print_menu(win, index, item, mode):
-    (node, data) = item
-    win.addstr(index+1, data.get('depth')+1, "{} {}".format(node, data.get('value', '')), mode)
+    win.addstr(index+1, item.get('depth')+1, "{}{} {}".format(" "*item.get('depth'),
+                                                              item.get('key', ''),
+                                                              item.get('value', '')), mode)
 
 def print_selected(win, selected):
     None
@@ -63,17 +61,17 @@ def display(pan, items):
         win.refresh()
         curses.doupdate()
 
-        depths = calc_depth(items)
+        depths = to_depths(items)
 
-        for index, item in enumerate(depths.items()):
+        for index, item in enumerate(depths):
             mode = curses.A_REVERSE if index == position else curses.A_NORMAL
             print_menu(win, index, item, mode)
 
         key = win.getch()
 
-        if key in [ ord('\n'), curses.KEY_ENTER ]:
-            selected = depths[depths.keys()[position]]
-            print selected.get('value', depths.keys()[position])
+        # if key in [ ord('\n'), curses.KEY_ENTER ]:
+        #     selected = depths[depths.keys()[position]]
+        #     print selected.get('value', depths.keys()[position])
 
         position = navigate(key, position, len(depths))
 
